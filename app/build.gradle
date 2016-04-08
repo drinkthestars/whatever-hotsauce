@@ -1,3 +1,9 @@
+allprojects {
+    repositories {
+        maven { url "https://jitpack.io" }
+    }
+}
+
 apply plugin: 'com.android.application'
 apply plugin: 'me.tatarka.retrolambda'
 
@@ -39,7 +45,6 @@ dependencies {
     compile 'com.android.support:support-v4:23.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding:0.4.0'
     compile 'com.jakewharton.rxbinding:rxbinding-support-v4:0.4.0'
-    compile 'com.jakewharton.rxbinding:rxbinding-support-v4:0.4.0'
     compile 'com.jakewharton.rxbinding:rxbinding-design:0.4.0'
     compile 'com.jakewharton.rxbinding:rxbinding-recyclerview-v7:0.4.0'
     compile 'com.trello:rxlifecycle:0.5.0'
@@ -56,4 +61,6 @@ dependencies {
     // This library handles music playback
     compile 'com.spotify.sdk:spotify-player:1.0.0-beta12@aar'
 
+    // spotify web api wrapper
+    compile 'com.github.kaaes:spotify-web-api-android:0.3.0'
 }

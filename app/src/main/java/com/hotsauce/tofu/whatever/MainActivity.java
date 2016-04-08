@@ -7,7 +7,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
@@ -18,12 +17,19 @@ import com.spotify.sdk.android.player.Player;
 import com.spotify.sdk.android.player.PlayerNotificationCallback;
 import com.spotify.sdk.android.player.PlayerState;
 import com.spotify.sdk.android.player.Spotify;
+import kaaes.spotify.webapi.android.SpotifyApi;
+import kaaes.spotify.webapi.android.SpotifyService;
+import kaaes.spotify.webapi.android.models.Album;
+import retrofit.Callback;
+import retrofit.RetrofitError;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
  * status bar and navigation/system bar) with user interaction.
  */
-public class NoUi extends AppCompatActivity implements PlayerNotificationCallback, ConnectionStateCallback {
+public class MainActivity extends AppCompatActivity implements PlayerNotificationCallback, ConnectionStateCallback {
+	private static String TAG = MainActivity.class.getSimpleName();
+
 	/**
 	 * Whether or not the system UI should be auto-hidden after
 	 * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
@@ -59,6 +65,20 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 	private Player mPlayer;
 	private final Handler mHideHandler = new Handler();
 	private View mContentView;
+	private View mControlsView;
+	private boolean mVisible;
+
+	private final Runnable mShowPart2Runnable = new Runnable() {
+		@Override
+		public void run() {
+			// Delayed display of UI elements
+			final ActionBar actionBar = getSupportActionBar();
+			if (actionBar != null) {
+				actionBar.show();
+			}
+			mControlsView.setVisibility(View.VISIBLE);
+		}
+	};
 	private final Runnable mHidePart2Runnable = new Runnable() {
 		@SuppressLint("InlinedApi")
 		@Override
@@ -76,19 +96,6 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 					| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
 		}
 	};
-	private View mControlsView;
-	private final Runnable mShowPart2Runnable = new Runnable() {
-		@Override
-		public void run() {
-			// Delayed display of UI elements
-			ActionBar actionBar = getSupportActionBar();
-			if (actionBar != null) {
-				actionBar.show();
-			}
-			mControlsView.setVisibility(View.VISIBLE);
-		}
-	};
-	private boolean mVisible;
 	private final Runnable mHideRunnable = () -> hide();
 	/**
 	 * Touch listener to use for in-layout UI controls to delay hiding the
@@ -106,7 +113,7 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		setContentView(R.layout.activity_no_ui);
+		setContentView(R.layout.main_activity);
 
 		mVisible = true;
 		mControlsView = findViewById(R.id.fullscreen_content_controls);
@@ -121,7 +128,7 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 		findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
 
-		AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
+		final AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
 				AuthenticationResponse.Type.TOKEN,
 				REDIRECT_URI);
 		builder.setScopes(new String[]{"user-read-private", "streaming"});
@@ -142,6 +149,7 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 
 	@Override
 	protected void onDestroy() {
+		// must destroy player or resources will leak
 		Spotify.destroyPlayer(this);
 		super.onDestroy();
 	}
@@ -159,14 +167,32 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 					@Override
 					public void onInitialized(Player player) {
 						mPlayer = player;
-						mPlayer.addConnectionStateCallback(NoUi.this);
-						mPlayer.addPlayerNotificationCallback(NoUi.this);
+						mPlayer.addConnectionStateCallback(MainActivity.this);
+						mPlayer.addPlayerNotificationCallback(MainActivity.this);
 						mPlayer.play("spotify:track:2TpxZ7JUBn3uw46aR7qd6V");
 					}
 
 					@Override
 					public void onError(Throwable throwable) {
-						Log.e("NoUi", "Could not initialize player: " + throwable.getMessage());
+						Log.e(TAG, "Could not initialize player: " + throwable.getMessage());
+					}
+				});
+
+				final SpotifyApi api = new SpotifyApi();
+
+				api.setAccessToken(response.getAccessToken());
+
+				final SpotifyService spotifyService = api.getService();
+
+				spotifyService.getAlbum("2dIGnmEIy1WZIcZCFSj6i8", new Callback<Album>() {
+					@Override
+					public void success(Album album, retrofit.client.Response response) {
+						Log.d(TAG, "Album success: " + album.name);
+					}
+
+					@Override
+					public void failure(RetrofitError error) {
+						Log.d(TAG, "Album failure: " + error.toString());
 					}
 				});
 			}
@@ -183,7 +209,7 @@ public class NoUi extends AppCompatActivity implements PlayerNotificationCallbac
 
 	private void hide() {
 		// Hide UI first
-		ActionBar actionBar = getSupportActionBar();
+		final ActionBar actionBar = getSupportActionBar();
 		if (actionBar != null) {
 			actionBar.hide();
 		}
