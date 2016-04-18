@@ -1,13 +1,14 @@
-package com.hotsauce.tofu.whatever;
+package com.hotsauce.tofu.whatever.view;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import com.hotsauce.tofu.whatever.R;
 import com.spotify.sdk.android.authentication.AuthenticationClient;
 import com.spotify.sdk.android.authentication.AuthenticationRequest;
 import com.spotify.sdk.android.authentication.AuthenticationResponse;
@@ -55,40 +56,23 @@ public class WhateverActivity extends AppCompatActivity implements PlayerNotific
 	private static final int REQUEST_CODE = 1337;
 
 	private Player mPlayer;
-	private View mContentView;
-	private View mControlsView;
-	private boolean mVisible;
+
+	@Bind(R.id.control_panel)
+	View mContentView;
+
+	@Bind(R.id.play)
+	TextView mPlay;
+
+	@Bind(R.id.pause)
+	TextView mPause;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
 		setContentView(R.layout.whatever_activity);
-
-		mVisible = true;
-		mControlsView = findViewById(R.id.fullscreen_content_controls);
-		mContentView = findViewById(R.id.fullscreen_content);
-
-		// Set up the user interaction to manually show or hide the system UI.
-//		mContentView.setOnClickListener(view -> toggle());
-
-		final AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
-				AuthenticationResponse.Type.TOKEN,
-				REDIRECT_URI);
-		builder.setScopes(new String[]{"user-read-private", "streaming"});
-		AuthenticationRequest request = builder.build();
-
-		AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
-
-		// Note that some of these constants are new as of API 16 (Jelly Bean)
-		// and API 19 (KitKat). It is safe to use them, as they are inlined
-		// at compile-time and do nothing on earlier devices.
-		mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-				| View.SYSTEM_UI_FLAG_FULLSCREEN
-				| View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-				| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-				| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-				| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+		ButterKnife.bind(this);
+		loginSpotify();
+		fullscreenAllOfIt();
 	}
 
 	@Override
@@ -113,6 +97,7 @@ public class WhateverActivity extends AppCompatActivity implements PlayerNotific
 						mPlayer = player;
 						mPlayer.addConnectionStateCallback(WhateverActivity.this);
 						mPlayer.addPlayerNotificationCallback(WhateverActivity.this);
+						bindListeners();
 //						mPlayer.play(TRACK_URI);
 					}
 
@@ -162,6 +147,45 @@ public class WhateverActivity extends AppCompatActivity implements PlayerNotific
 				Log.d(TAG, "Album failure: " + error.toString());
 			}
 		});
+	}
+
+	private void fullscreenAllOfIt() {
+		// Note that some of these constants are new as of API 16 (Jelly Bean)
+		// and API 19 (KitKat). It is safe to use them, as they are inlined
+		// at compile-time and do nothing on earlier devices.
+		mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
+				| View.SYSTEM_UI_FLAG_FULLSCREEN
+				| View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+				| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+				| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+				| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+	}
+
+	private void loginSpotify() {
+		final AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID,
+				AuthenticationResponse.Type.TOKEN,
+				REDIRECT_URI);
+		builder.setScopes(new String[]{"user-read-private", "streaming"});
+		AuthenticationRequest request = builder.build();
+
+		AuthenticationClient.openLoginActivity(this, REQUEST_CODE, request);
+	}
+
+	private void bindListeners() {
+		mPlay.setOnClickListener(v -> mPlayer.play(TRACK_URI));
+		mPlayer.addPlayerNotificationCallback(new PlayerNotificationCallback() {
+			@Override
+			public void onPlaybackEvent(EventType eventType, PlayerState playerState) {
+
+			}
+
+			@Override
+			public void onPlaybackError(ErrorType errorType, String s) {
+
+			}
+		});
+
+		mPause.setOnClickListener(v -> mPlayer.pause());
 	}
 
 	@Override
