@@ -4,11 +4,11 @@
 	android:layout_height="match_parent"
 	android:layout_gravity="center"
 	android:background="#0099cc"
-	tools:context=".WhateverActivity"
+	tools:context=".view.WhateverActivity"
 	android:orientation="vertical">
 
 	<LinearLayout
-		android:id="@+id/fullscreen_content"
+		android:id="@+id/control_panel"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:layout_gravity="center"
@@ -30,12 +30,6 @@
 			android:layout_height="wrap_content"
 			android:text="@string/pause" />
 
-		<TextView
-			android:id="@+id/stop"
-			style="@style/PlayerControls"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="@string/stop" />
 	</LinearLayout>
 
 	<!-- This FrameLayout insets its children based on system windows using
